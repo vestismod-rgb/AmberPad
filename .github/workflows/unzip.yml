@@ -1,33 +1,29 @@
-name: Unzip
-on:
-  workflow_dispatch:
-  push:
-    paths: ['*.zip']
-permissions:
-  contents: write
+name: Build AmberPad
+on: workflow_dispatch
+
 jobs:
-  unzip:
+  build:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Unzip and commit
-        run: |
-          unzip -o AmberPad.zip -x ".github/*" "__MACOSX/*"
-          rm AmberPad.zip
-          git config user.name "github-actions"
-          git config user.email "actions@github.com"
-          git add -A
-          git commit -m "Unzip project"
-          git push
+
+      - name: Unzip
+        run: unzip -o AmberPad.zip -x "__MACOSX/*" -d project
+
       - uses: actions/setup-java@v4
         with:
           distribution: temurin
           java-version: 17
+
       - uses: gradle/actions/setup-gradle@v4
         with:
-          gradle-version: "8.9"
-      - run: gradle assembleDebug --no-daemon
+          gradle-version: 8.7
+
+      - name: Build APK
+        working-directory: project
+        run: gradle assembleDebug --no-daemon
+
       - uses: actions/upload-artifact@v4
         with:
-          name: AmberPad-debug
-          path: app/build/outputs/apk/debug/*.apk
+          name: AmberPad-apk
+          path: project/app/build/outputs/apk/debug/*.apk
